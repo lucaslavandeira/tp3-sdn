@@ -52,11 +52,3 @@ def launch():
 
     # Registrando el Controller en pox.core para que sea ejecutado
     core.registerNew(Controller)
-
-    """
-    Corriendo Spanning Tree Protocol y el modulo l2_learning.
-    No queremos correrlos para la resolucion del TP.
-    Aqui lo hacemos a modo de ejemplo
-    """
-    pox.openflow.spanning_tree.launch()
-    pox.forwarding.l2_learning.launch()
