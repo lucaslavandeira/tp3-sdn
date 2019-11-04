@@ -24,20 +24,21 @@ class SwitchController:
         # DST IP = packet.payload.dstip
         # SRC PORT = packet.payload.payload.srcport
         # DST PORT = packet.payload.payload.dstport
-        log.info("Packet arrived to switch %s from %s to %s",
-                 self.dpid, packet.payload.srcip, packet.payload.dstip)
+        log.info("Packet arrived to switch %s from %s (port %s) to %s",
+                 self.dpid, packet.payload.srcip, event.port, packet.payload.dstip)
 
-        if packet.payload.v != 4:
+        if packet.type != packet.IP_TYPE:  # Solo manejamos IPv4
             return
-        if packet.payload.dstip.toStr() == of.IPAddr('10.0.0.1').toStr():
-            out_port = 1
-        else:
+
+        if event.port == 1:
             out_port = 2
+        else:
+            out_port = 1
 
         msg = of.ofp_flow_mod()
-        msg.priority = 42
+        msg.data = event.ofp
+        msg.priority = of.OFP_DEFAULT_PRIORITY
         msg.match.dl_type = 0x800
         msg.match.nw_dst = packet.payload.dstip
         msg.actions.append(of.ofp_action_output(port=out_port))
         self.connection.send(msg)
-
