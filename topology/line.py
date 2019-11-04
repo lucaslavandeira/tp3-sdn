@@ -8,7 +8,7 @@ En este caso estamos creando una topologia muy simple con la siguiente forma
 from mininet.topo import Topo
 
 
-class Example(Topo):
+class LineTopology(Topo):
     def __init__(self, half_ports=2, **opts):
         Topo.__init__(self, **opts)
 
@@ -28,4 +28,4 @@ class Example(Topo):
         print("Hola")
 
 
-topos = {'example': Example}
+topos = {'line': LineTopology}
