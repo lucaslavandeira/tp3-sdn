@@ -6,11 +6,12 @@ log = core.getLogger()
 
 
 class SwitchController:
-    def __init__(self, dpid, connection):
+    def __init__(self, dpid, connection, switches):
         self.dpid = dpid
         self.connection = connection
         # El SwitchController se agrega como handler de los eventos del switch
         self.connection.addListeners(self)
+        self.switches = switches
 
     def _handle_PacketIn(self, event):
         """
@@ -19,14 +20,16 @@ class SwitchController:
         """
 
         packet = event.parsed
-
+        path = self.switches.resolve_path(self.connection.eth_addr, packet)
+        log.info("Path encontrado {}".format(path))
+        if not path:
+            return
         # SRC IP = packet.payload.srcip
         # DST IP = packet.payload.dstip
         # SRC PORT = packet.payload.payload.srcport
         # DST PORT = packet.payload.payload.dstport
-        log.info("Packet arrived to switch %s from %s (port %s) to %s",
-                 self.dpid, packet.payload.srcip, event.port, packet.payload.dstip)
 
+        import pdb; pdb.set_trace()
         if packet.type != packet.IP_TYPE:  # Solo manejamos IPv4
             return
 
