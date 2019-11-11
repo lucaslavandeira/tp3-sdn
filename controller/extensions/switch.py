@@ -22,9 +22,15 @@ class SwitchController:
     def add_link_port(self, switch_id, port):
         self.ports[port] = switch_id
 
+    def remove_link_port(self,port):
+        if port in self.ports.keys():
+            self.ports.pop(port)
+
     def add_host(self, macaddr, port):
         self.host[port] = macaddr
 
+    def clean_routes(self):
+        self.routes = []
 
     def ports_adyascents(self):
         return self.ports.items()

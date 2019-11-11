@@ -45,15 +45,23 @@ class Controller:
             #Lo agrego al diccionario de switches
             self.switches[event.dpid] = switch
 
+
+
     def _handle_LinkEvent(self, event):
         """
         Esta funcion es llamada cada vez que openflow_discovery descubre un nuevo enlace
         """
         link = event.link
-        #log.info("Link has been discovered from %s,%s to %s,%s", dpid_to_str(link.dpid1), link.port1,  dpid_to_str(link.dpid2), link.port2)
-        #self.switches.add_link(self.links[link.dpid1], link.port1, self.links[link.dpid2], link.port2)
-        self.switches[link.dpid1].add_link_port(link.dpid2,link.port1)
-        self.switches[link.dpid2].add_link_port(link.dpid1,link.port2)
+        if not event.removed:
+            log.info("Link has been discovered from %s,%s to %s,%s", dpid_to_str(link.dpid1), link.port1,  dpid_to_str(link.dpid2), link.port2)
+            self.switches[link.dpid1].add_link_port(link.dpid2,link.port1)
+            self.switches[link.dpid2].add_link_port(link.dpid1,link.port2)
+        else:
+            self.switches[link.dpid1].remove_link_port(link.port1)
+            self.switches[link.dpid2].remove_link_port(link.port2)
+            self.switches[link.dpid1].clean_routes()
+            self.switches[link.dpid2].clean_routes()
+
 
 
     def assign_route(self, switch_id, packet, port_in, data):
