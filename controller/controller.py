@@ -45,6 +45,15 @@ class Controller:
             #Lo agrego al diccionario de switches
             self.switches[event.dpid] = switch
 
+    def _handle_ConnectionDown(self, event):
+        log.info("Switch %s has come down.", dpid_to_str(event.dpid))
+
+        #Removemos el switch de la lista de switchs
+        #Y limipamos todas las rutas
+        if event.dpid in self.switches.keys():
+            self.switches.pop(event.dpid)
+            for switch_id in self.switches.keys():
+                self.switches[switch_id].clean_routes()
 
 
     def _handle_LinkEvent(self, event):
