@@ -40,32 +40,43 @@ class Controller:
 
             # Lo agrego al diccionario de switches
             self.switches[event.dpid] = switch
+            log.info("Switch agregado a la lista de switchs")
+            log.info("Cantidad de switches: %d", len(self.switches.keys()))
 
     def _handle_ConnectionDown(self, event):
         log.info("Switch %s has come down.", dpid_to_str(event.dpid))
 
         # Removemos el switch de la lista de switchs
         # Y limipamos todas las rutas
+        self.connections.discard(event.connection)
         if event.dpid in self.switches.keys():
-            self.switches.pop(event.dpid)
             for switch_id in self.switches.keys():
                 self.switches[switch_id].clean_routes()
+
+            self.switches.pop(event.dpid)
+            log.info("Switch removido de la lista de switches")
+            log.info("Cantidad de switches: %d", len(self.switches.keys()))
+
 
     def _handle_LinkEvent(self, event):
         """
         Esta funcion es llamada cada vez que openflow_discovery descubre un nuevo enlace
         """
         link = event.link
-        if not event.removed:
+        if event.added:
             log.info("Link has been discovered from %s,%s to %s,%s", dpid_to_str(link.dpid1), link.port1,
                      dpid_to_str(link.dpid2), link.port2)
             self.switches[link.dpid1].add_link_port(link.dpid2, link.port1)
             self.switches[link.dpid2].add_link_port(link.dpid1, link.port2)
-        else:
+        elif event.removed:
+            log.info("Link has been removed from %s,%s to %s,%s", dpid_to_str(link.dpid1), link.port1,
+                     dpid_to_str(link.dpid2), link.port2)
             self.switches[link.dpid1].remove_link_port(link.port1)
             self.switches[link.dpid2].remove_link_port(link.port2)
             self.switches[link.dpid1].clean_routes()
             self.switches[link.dpid2].clean_routes()
+
+
 
     def assign_route(self, switch_id, packet, port_in, data):
         start = switch_id
