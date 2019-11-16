@@ -1,6 +1,5 @@
 from pox.core import core
 import pox.openflow.libopenflow_01 as of
-from pox.lib.addresses import IPAddr
 
 log = core.getLogger()
 
@@ -18,47 +17,50 @@ class SwitchController:
         self.cost = 0
         self.routes = []
 
-
     def add_link_port(self, switch_id, port):
         self.ports[port] = switch_id
 
-    def remove_link_port(self,port):
+    def remove_link_port(self, port):
         if port in self.ports.keys():
             self.ports.pop(port)
-
-    def add_host(self, macaddr, port):
-        self.host[port] = macaddr
 
     def clean_routes(self):
         self.routes = []
 
-    def ports_adyascents(self):
+    def adj_ports(self):
         return self.ports.items()
 
-    def hosts_adyascents(self):
+    def adj_hosts(self):
         return self.hosts.items()
 
-    def add_route(self, in_port, exit_port, eth_src, eth_dst, eth_type, ip_src, ip_dst, ip_type):
-        self.routes.append([in_port, eth_src, eth_dst, eth_type, ip_src, ip_dst, ip_type, exit_port])
+    def add_route(self, in_port, exit_port, packet):
+
+        self.routes.append([in_port,
+                            packet.src,
+                            packet.dst,
+                            packet.type,
+                            packet.payload.srcip,
+                            packet.payload.dstip,
+                            packet.payload.protocol,
+                            exit_port])
         # Aumentamos el costo de pasar por este switch en 1 para controlar
         # el trafico
         self.cost += 1
 
-    def search_route(self,event,packet):
+    def search_route(self, event, packet):
 
         for in_port, eth_src, eth_dst, eth_type, ip_src, ip_dst, ip_type, exit_port in self.routes:
             if (event.port == in_port and
-                eth_src == packet.src and
-                eth_dst == packet.dst and
-                eth_type == packet.type and
-                ip_src == packet.payload.srcip and
-                ip_dst == packet.payload.dstip and
-                ip_type == packet.payload.protocol):
-
+                    eth_src == packet.src and
+                    eth_dst == packet.dst and
+                    eth_type == packet.type and
+                    ip_src == packet.payload.srcip and
+                    ip_dst == packet.payload.dstip and
+                    ip_type == packet.payload.protocol):
                 self.route_msg(in_port, exit_port, eth_src, eth_dst, eth_type, ip_src, ip_dst, ip_type, event.ofp)
                 return True
 
-        #No se encontro la ruta en las rutas existentes
+        # No se encontro la ruta en las rutas existentes
         return False
 
     def route_msg(self, in_port, exit_port, eth_src, eth_dst, eth_type, ip_src, ip_dst, ip_type, data):
@@ -73,11 +75,10 @@ class SwitchController:
         msg.match.nw_dst = ip_dst
         msg.match.nw_proto = ip_type
 
-        msg.actions.append(of.ofp_action_output(port = exit_port))
-        log.info("Sending to switch: %s from %s to %s port in: %s out: %s.", self.dpid, eth_src, eth_dst, in_port, exit_port)
+        msg.actions.append(of.ofp_action_output(port=exit_port))
+        log.info("Sending to switch: %s from %s to %s port in: %s out: %s.", self.dpid, eth_src, eth_dst, in_port,
+                 exit_port)
         self.connection.send(msg)
-
-
 
     def _handle_PacketIn(self, event):
         """
@@ -86,9 +87,9 @@ class SwitchController:
         """
         packet = event.parsed
 
-        #Si un paquete arribo y no esta en la lista de puertos quiere decir
-        #Que es un host perteneciente al switch
-        if (event.port not in self.ports.keys()):
+        # Si un paquete arribo y no esta en la lista de puertos quiere decir
+        # Que es un host perteneciente al switch
+        if event.port not in self.ports:
             self.hosts[event.port] = packet.src
 
         if packet.type != packet.IP_TYPE:  # Solo manejamos IPv4
@@ -98,5 +99,4 @@ class SwitchController:
         if not ruteado:
             # Obtenemos y asignamos una ruta hacia el destino
             self.controller.assign_route(self.dpid, packet, event.port, event.ofp)
-            self.search_route(event,packet)
-
+            self.search_route(event, packet)
