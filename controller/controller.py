@@ -76,16 +76,15 @@ class Controller:
             self.switches[link.dpid1].clean_routes()
             self.switches[link.dpid2].clean_routes()
 
-
-
-    def assign_route(self, switch_id, packet, port_in, data):
+    def assign_route(self, switch_id, packet, port_in):
         start = switch_id
         end = packet.dst
 
         not_visitted = []
         acum_dist = {}
         precesors = {}
-        possible_last_switches = []
+        last_switch = None
+        last_out_port = None
 
         for switch in self.switches.keys():
             # Agrego todos los switch a los no visitados
@@ -98,10 +97,11 @@ class Controller:
             # Lo agrego a la lista de switch final
             for port, mac in self.switches[switch].adj_hosts():
                 if end == mac:
-                    possible_last_switches.append([switch, port])
+                    last_switch, last_out_port = switch, port
+                    break
 
         # Se desconoce como llegar al host
-        if len(possible_last_switches) == 0:
+        if last_switch is None:
             return
 
         # Distancia acumulada desde el comienzo
@@ -131,20 +131,7 @@ class Controller:
 
         # Get shortest path
         path = []
-        actual_dist = 99999
-        last_switch = 0
-        port = 0
-
-        # Por ahora solo tomamos un unico switch adyacente al host destino
-        # Esto es valido siempre que se respete fat tree
-        # Donde cada datacenter se conecta con un unico switch
-        # Por lo que la lista deberia ser de 1 solo elemento
-
-        for switch, p in possible_last_switches:
-            if acum_dist[switch] < actual_dist:
-                last_switch = switch
-                port = p
-                actual_dist = acum_dist[switch]
+        port = last_out_port
 
         # Esta conectado directamente con el switch
         if last_switch == start:

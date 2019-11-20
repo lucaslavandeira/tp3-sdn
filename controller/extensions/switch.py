@@ -14,7 +14,6 @@ class SwitchController:
         self.hosts = {}
         self.ports = {}
 
-        self.cost = 0
         self.routes = []
 
     def add_link_port(self, switch_id, port):
@@ -43,9 +42,6 @@ class SwitchController:
                             packet.payload.dstip,
                             packet.payload.protocol,
                             exit_port])
-        # Aumentamos el costo de pasar por este switch en 1 para controlar
-        # el trafico
-        self.cost += 1
 
     def search_route(self, event, packet):
 
@@ -98,6 +94,5 @@ class SwitchController:
         ruteado = self.search_route(event, packet)
         if not ruteado:
             # Obtenemos y asignamos una ruta hacia el destino
-            self.controller.assign_route(self.dpid, packet, event.port, event.ofp)
+            self.controller.assign_route(self.dpid, packet, event.port)
             self.search_route(event, packet)
-
