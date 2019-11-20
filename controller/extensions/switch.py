@@ -16,6 +16,7 @@ class SwitchController:
 
         self.routes = []
 
+
     def add_link_port(self, switch_id, port):
         self.ports[port] = switch_id
 
@@ -72,8 +73,9 @@ class SwitchController:
         msg.match.nw_proto = ip_type
 
         msg.actions.append(of.ofp_action_output(port=exit_port))
-        log.info("Sending to switch: %s from %s to %s port in: %s out: %s.", self.dpid, eth_src, eth_dst, in_port,
-                 exit_port)
+        #Esto queda comentado para debuggear
+        #log.info("Sending to switch: %s from %s to %s port in: %s out: %s.", self.dpid, eth_src, eth_dst, in_port,
+        #      exit_port)
         self.connection.send(msg)
 
     def _handle_PacketIn(self, event):

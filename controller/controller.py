@@ -6,7 +6,7 @@ from pox.lib.util import dpid_to_str
 
 from extensions.switch import SwitchController
 import pox.host_tracker
-
+import random
 log = core.getLogger()
 
 
@@ -112,12 +112,21 @@ class Controller:
         while not_visitted:
             not_visitted.remove(last)
 
+
             for port, adj in self.switches[last].adj_ports():
                 # Los adyacentes estan a una unidad de distancia
                 if acum_dist[adj] > acum_dist[last] + 1:
                     acum_dist[adj] = acum_dist[last] + 1
                     # Append Switch and the port that goes to this switch
                     precesors[adj] = [last, port]
+
+                #Si las distnacias llegan a ser iguales
+                #hago un random entre las dos opciones
+                #y me quedo con una
+                elif (acum_dist[adj] == acum_dist[last] + 1):
+                    if (bool(random.getrandbits(1))):
+                        precesors[adj] = [last, port]
+
 
             minor_dist = 99999
 
@@ -148,7 +157,10 @@ class Controller:
                 last_switch = sw
 
             path.append([port_in, last_switch, port])
-
+        #Imprimo el path, si corremos dos veces la topologia
+        #y observamos los caminos deberian ser diferentes
+        #TENGO MIEDO
+        print(path)
         for in_port, switch, exit_port in reversed(path):
             self.switches[switch].add_route(
                 in_port,
