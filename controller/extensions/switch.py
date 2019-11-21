@@ -16,7 +16,6 @@ class SwitchController:
 
         self.routes = []
 
-
     def add_link_port(self, switch_id, port):
         self.ports[port] = switch_id
 

@@ -2,8 +2,8 @@ from pox.core import core
 import pox.openflow.discovery
 import pox.openflow.spanning_tree
 import pox.forwarding.l2_learning
-from pox.lib.util import dpid_to_str
-
+from pox.lib.util import dpid_to_str, dpidToStr
+import pox.openflow.libopenflow_01 as of
 from extensions.switch import SwitchController
 import pox.host_tracker
 import random
@@ -50,8 +50,9 @@ class Controller:
         # Y limipamos todas las rutas
         self.connections.discard(event.connection)
         if event.dpid in self.switches.keys():
-            for switch_id in self.switches.keys():
-                self.switches[switch_id].clean_routes()
+            for switch in self.switches.values():
+                msg = of.ofp_flow_mod(command=of.OFPFC_DELETE)
+                switch.connection.send(msg)
 
             self.switches.pop(event.dpid)
             log.info("Switch removido de la lista de switches")
